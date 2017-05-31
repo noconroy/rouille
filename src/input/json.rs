@@ -37,8 +37,8 @@ use std::error;
 use std::fmt;
 use std::io::Error as IoError;
 use std::io::Read;
-use rustc_serialize::Decodable;
-use rustc_serialize::json;
+use serde::de::DeserializeOwned;
+use serde_json;
 use Request;
 
 /// Error that can happen when parsing the JSON input.
@@ -54,7 +54,7 @@ pub enum JsonError {
     IoError(IoError),
 
     /// Error while parsing.
-    ParseError(json::DecoderError),
+    ParseError(serde_json::Error),
 }
 
 impl From<IoError> for JsonError {
@@ -63,8 +63,8 @@ impl From<IoError> for JsonError {
     }
 }
 
-impl From<json::DecoderError> for JsonError {
-    fn from(err: json::DecoderError) -> JsonError {
+impl From<serde_json::Error> for JsonError {
+    fn from(err: serde_json::Error) -> JsonError {
         JsonError::ParseError(err)
     }
 }
@@ -129,7 +129,9 @@ impl fmt::Display for JsonError {
 /// }
 /// ```
 ///
-pub fn json_input<O>(request: &Request) -> Result<O, JsonError> where O: Decodable {
+pub fn json_input<O>(request: &Request) -> Result<O, JsonError>
+    where O: DeserializeOwned
+{
     // TODO: add an optional bytes limit
 
     if let Some(header) = request.header("Content-Type") {
@@ -150,6 +152,6 @@ pub fn json_input<O>(request: &Request) -> Result<O, JsonError> where O: Decodab
         out
     };
 
-    let data = try!(json::decode(&content));
+    let data = try!(serde_json::from_str(&content));
     Ok(data)
 }

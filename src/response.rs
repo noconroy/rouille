@@ -13,7 +13,8 @@ use std::io;
 use std::io::Cursor;
 use std::io::Read;
 use std::fs::File;
-use rustc_serialize;
+use serde;
+use serde_json;
 use url::percent_encoding;
 use Request;
 use Upgrade;
@@ -347,8 +348,10 @@ impl Response {
     /// # }
     /// ```
     #[inline]
-    pub fn json<T>(content: &T) -> Response where T: rustc_serialize::Encodable {
-        let data = rustc_serialize::json::encode(content).unwrap();
+    pub fn json<T>(content: &T) -> Response
+        where T: serde::Serialize
+    {
+        let data = serde_json::to_string(content).unwrap();
 
         Response {
             status_code: 200,
